@@ -342,16 +342,10 @@ class auth_plugin_saml2 extends auth_plugin_base {
         set_moodle_cookie($USER->username);
 
         $urltogo = core_login_get_return_url();
-        // If we are not on the page we want, then redirect to it.
-        if ( qualified_me() !== $urltogo ) {
-            $this->log(__FUNCTION__ . " redirecting to $urltogo");
-            redirect($urltogo);
-            exit;
-        } else {
-            $this->log(__FUNCTION__ . " continuing onto " . qualified_me() );
-        }
-
-        return;
+        // Even if we are on the page we want, redirect again so it reloads.
+        // Some pages, like course/view.php, call 'require_login' after it initialised internal values possibly with guest.
+        $this->log(__FUNCTION__ . " redirecting to $urltogo");
+        redirect($urltogo);
     }
 
     /**
