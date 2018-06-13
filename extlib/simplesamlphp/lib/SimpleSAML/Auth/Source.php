@@ -223,7 +223,7 @@ abstract class SimpleSAML_Auth_Source
         $authId = $state['SimpleSAML_Auth_Source.id'];
         $session->doLogin($authId, SimpleSAML_Auth_State::getPersistentAuthData($state));
 
-        if (is_string($return)) { // redirect...
+        if (is_string($return)) { // redirect..
             \SimpleSAML\Utils\HTTP::redirectTrustedURL($return);
         } else {
             call_user_func($return, $state);

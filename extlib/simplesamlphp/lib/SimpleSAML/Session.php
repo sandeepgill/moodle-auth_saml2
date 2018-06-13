@@ -3,6 +3,7 @@
  * The Session class holds information about a user session, and everything attached to it.
  *
  * The session will have a duration and validity, and also cache information about the different
+     * The list of loaded session objects.
  * federation protocols, as Shibboleth and SAML 2.0. On the IdP side the Session class holds
  * information about all the currently logged in SPs. This is used when the user initiates a
  * Single-Log-Out.
@@ -241,6 +242,7 @@ class SimpleSAML_Session implements Serializable
 
         // check if we have stored a session stored with the session handler
         $session = null;
+	
         try {
             $session = self::getSession();
         } catch (Exception $e) {

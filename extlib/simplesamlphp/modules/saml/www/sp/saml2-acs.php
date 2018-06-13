@@ -12,6 +12,7 @@ $sourceId = substr($_SERVER['PATH_INFO'], 1);
 $source = SimpleSAML_Auth_Source::getById($sourceId, 'sspmod_saml_Auth_Source_SP');
 $spMetadata = $source->getMetadata();
 
+
 try {
     $b = SAML2_Binding::getCurrentBinding();
 } catch (Exception $e) { // TODO: look for a specific exception
@@ -73,6 +74,7 @@ if ($prevAuth !== null && $prevAuth['id'] === $response->getId() && $prevAuth['i
 $idpMetadata = array();
 
 $stateId = $response->getInResponseTo();
+
 if (!empty($stateId)) {
     // this is a response to a request we sent earlier
     $state = SimpleSAML_Auth_State::loadState($stateId, 'saml:sp:sso');
