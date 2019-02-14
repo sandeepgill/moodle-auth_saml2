@@ -22,12 +22,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// This page is only used when dual auth is turned on. In this case
-// the user is redirected to here which forces SAML auth and then
-// returns to the wantsurl.
+/*
+This page is only used when dual auth is turned on. In this case
+the user is redirected to here which forces SAML auth and then
+returns to the wantsurl.
+*/
 
+require_once(__DIR__ . '/../../config.php');
 require('setup.php');
 
-// crap for hash anchor handling
+// Crap for hash anchor handling.
 $saml2auth->saml_login();
 

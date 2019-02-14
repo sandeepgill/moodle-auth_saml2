@@ -14,6 +14,7 @@ https://moodle.org/plugins/auth_saml2
 * [How does it work?](#how-does-it-work)
 * [Features](#features)
 * [Installation](#installation)
+* [Configuration](#configuration)
 * [Testing](#testing)
 * [Debugging](#debugging)
 * [Gotchas](#gotchas)
@@ -59,6 +60,7 @@ Features
 * SAML attributes to Moodle user field mapping
 * Automatic certificate creation
 * Optionally auto create users
+* Support for multiple identity providers
 
 Features not yet implemented:
 
@@ -69,15 +71,7 @@ Features not yet implemented:
 Installation
 ------------
 
-1. Install and enable php-mcrypt. On debian / ubuntu this may look like
-
-   ```sh
-   sudo apt-get install php5-mcrypt
-   sudo php5enmod mcrypt 
-   sudo service apache2 restart
-   ```
-   
-2. Install the plugin the same as any standard moodle plugin either via the
+1. Install the plugin the same as any standard moodle plugin either via the
 Moodle plugin directory, or you can use git to clone it into your source:
 
    ```sh
@@ -88,19 +82,37 @@ Moodle plugin directory, or you can use git to clone it into your source:
     
    https://moodle.org/plugins/auth_saml2
 
-3. Then run the Moodle upgrade
+2. Then run the Moodle upgrade
 
-4. If your IdP has a publicly available XML descriptor, copy it's url into
+3. If your IdP has a publicly available XML descriptor, copy it's url into
    the SAML2 auth config settings page. Otherwise copy the XML verbatum into
    the settings textarea instead.
    
-5. If your IdP requires whitelisting each SP then in the settings page is
+4. If your IdP requires whitelisting each SP then in the settings page is
    links to download the XML, or you can provide that url to your IdP
    administrator.
 
 For most simple setups this is enough to get authentication working, there are
 many more settings to define how to handle new accounts, dual authentication,
 and to easily debug the plugin if things are not working.
+
+
+Configuration
+-------------
+
+Most of the configuration is done in the Moodle admin GUI and should be self
+explanatory for someone familiar with SAML generally. There are a few extra
+configuration items which are currently don't have a GUI and should be added
+to your moodle config.php file:
+
+```php
+$CFG->auth_saml2_disco_url = '';
+
+$CFG->auth_saml2_store = '\\auth_saml2\\redis_store'; # Use an alternate store
+
+$CFG->auth_saml2_redis_server = ''; # Required for the redis_store above
+
+```
 
 
 Testing
@@ -146,8 +158,49 @@ right attributes but under an unexpected key name.
 /auth/saml2/test.php
 ```
 
+If you can succesfully do a saml login using this page then is narrows down where the
+issues lies. Some common issues are:
+
+1) You received a valid set of saml attributes, but the attribute(s) needed are not
+   present. ie often with say ADFS you may have to specify to 'release' the username.
+    
+2) You have got a valid set of attributes, but the key for the username isn't what
+   you expected. Cut and paste the correct key name into the Moodle auth_saml2 config
+   page to correctly map the 'idpattr' value.
+   
+3) The attribute key name might be a really crazy long looking string. This is common
+   with ADFS. If that long string contains certain characters then moodle will not
+   accept it, and this is an issue in Moodle itself and applies to all auth plugins.
+   You can add a custom claim in ADFS to rename this attribute to something nicer.
+   See this for more: https://github.com/catalyst/moodle-auth_saml2/issues/124
+   
+4) If it is bringing across all the attributes properly, but you are getting:
+   "You have logged in succesfully as 'xyz' but do not have an account in Moodle"
+   then you either need to change your user provisioning process to ensure users are
+   created ahead of time, or you need to enable the 'autocreate' setting. If you do
+   auto create then you need to be very careful that autocreated users, and users
+   provisioned via other means, and consistently setup.
+
+
 Gotchas
 -------
+
+**Multiple IdPs**
+When using multiple IdPs the system will force enable the dual login setting. This is so
+that a list of possible identity providers will be presented to the user when logging in.
+
+To enable multiple IdPs you can use the 'IdP metadata xml OR public xml URL' configuration
+field.  An example might look like this,
+
+```
+Identity Provider Name http://ssp1.local/simplesaml/saml2/idp/metadata.php
+http://ssp2.local/simplesaml/saml2/idp/metadata.php
+```
+
+If there is any text before the http scheme then it will be used as the override name.
+
+It is not be recommended to use the 'IdP label override' configuration option with
+multiple IdPs.
 
 **OpenAM**
 

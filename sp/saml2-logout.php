@@ -22,7 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once('../setup.php');
+require_once(__DIR__ . '/../../../config.php');
+require('../setup.php');
 
 // First setup the PATH_INFO because that's how SSP rolls.
 $_SERVER['PATH_INFO'] = '/' . $saml2auth->spname;

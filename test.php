@@ -22,16 +22,43 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+require_once(__DIR__ . '/../../config.php');
 require('setup.php');
 
+$idp = optional_param('idp', '', PARAM_RAW);
+$logout = optional_param('logout', '', PARAM_RAW);
+$idplogout = optional_param('idplogout', '', PARAM_RAW);
+
+if (!empty($idp)) {
+    $SESSION->saml2testidp = $idp;
+}
+
+if (!empty($logout)) {
+    $SESSION->saml2testidp = $idplogout;
+}
+
 $passive = optional_param('passive', '', PARAM_RAW);
+$passivefail = optional_param('passivefail', '', PARAM_RAW);
 $trylogin = optional_param('login', '', PARAM_RAW);
 
-$auth = new SimpleSAML_Auth_Simple($saml2auth->spname);
+if ($logout) {
+    $urlparams = [
+        'sesskey' => sesskey(),
+        'auth' => $saml2auth->authtype,
+    ];
+    $url = new moodle_url('/auth/test_settings.php', $urlparams);
+    $auth->logout(['ReturnTo' => $url->out(false)]);
+}
+
+$auth = new SimpleSAML\Auth\Simple($saml2auth->spname);
 
 if ($passive) {
-
-    $auth->requireAuth();
+    /* Prevent it from calling the missing post redirection. /auth/saml2/sp/module.php/core/postredirect.php */
+    $auth->requireAuth(array(
+        'KeepPost' => false,
+        'isPassive' => true,
+        'ErrorURL' => $CFG->wwwroot . '/auth/saml2/test.php?passivefail=1'
+    ));
     echo "<p>Passive auth check:</p>";
     if (!$auth->isAuthenticated() ) {
         $attributes = $auth->getAttributes();
@@ -41,18 +68,27 @@ if ($passive) {
 
 } else if (!$auth->isAuthenticated() && $trylogin) {
 
-    $auth->requireAuth();
+    $auth->requireAuth(array(
+        'KeepPost' => false
+    ));
     echo "Hello, authenticated user!";
     $attributes = $as->getAttributes();
     var_dump($attributes);
+    echo 'IdP: ' . $auth->getAuthData('saml:sp:IdP');
 
 } else if (!$auth->isAuthenticated()) {
-    echo '<p>You are not logged in: <a href="?login=true">Login</a></p>';
+    echo '<p>You are not logged in: <a href="?login=true">Login</a> | <a href="?passive=true">isPassive test</a></p>';
+    if ($passivefail) {
+        echo "Passive test worked, but not logged in";
+    }
 } else {
     echo 'Authed!';
     $attributes = $auth->getAttributes();
     echo '<pre>';
     var_dump($attributes);
+    echo 'IdP: ' . $auth->getAuthData('saml:sp:IdP');
     echo '</pre>';
+    echo '<p>You are logged in: <a href="?logout=true">Logout</a></p>';
 }
 
+unset($SESSION->saml2testidp);
